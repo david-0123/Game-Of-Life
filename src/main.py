@@ -1,8 +1,16 @@
 import random as rnd
 
 def random_state(width, height):
-    board = [[rnd.choice((0,1)) for x in range(width)] for y in range(height)]
-
+    board = [[rnd.choices(population=[' ', chr(0x25A0)], weights=[0.8,0.2], k=1)[0] for x in range(width)] for y in range(height)]
     return board
 
-print(random_state(5, 5))
+def render(board):
+    print(" "+chr(0x035F)*10)
+    for i in range(len(board)):
+        print(chr(0x2502), end="")
+        for j in range(len(board[i])):
+            print(board[i][j], end="")
+        print(chr(0x2502))
+    print(" "+chr(0x035E)*10)
+
+render(random_state(10, 5))
