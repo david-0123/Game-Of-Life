@@ -1,14 +1,17 @@
 import random as rnd
+import time
 
 # Generates the initial game state with 'dead' cells weighted more, i.e. 'dead' cells should be expected more often
 def random_state(width, height):
-    board = [[rnd.choices(population=[0,1], weights=[0.8,0.2], k=1)[0] for x in range(width)] for y in range(height)]
+    board = [[rnd.choices(population=[0,1], weights=[0.85,0.15], k=1)[0] for x in range(width)] for y in range(height)]
     return board
 
+# Generates a board with only dead cells
 def dead_state(width, height):
     board = [[0 for x in range(width)] for y in range(height)]
     return board
 
+# Calculates the state of the board after the next round
 def next_state(board):
     height = len(board)
     width = len(board[0])
@@ -41,24 +44,29 @@ def next_state(board):
     return next_board
 
 # Displays the current game state on the terminal with the correct format
-#  ͟͟͟͟͟͟͟͟͟͟
+#
 # │■   ■     │
 # │   ■    ■ │
 # │   ■      │
 # │     ■ ■ ■│
 # │         ■│
-#  ͞͞͞͞͞͞͞͞͞͞
 def render(board):
-    print(" "+chr(0x035F)*10)
     for i in range(len(board)):
         print(chr(0x2502), end="")
         for j in range(len(board[i])):
             if board[i][j] == 0:
                 symbol = ' '
             else:
-                symbol = chr(0x25A0)
+                symbol = chr(0x2588)
             print(symbol, end="")
         print(chr(0x2502))
-    print(" "+chr(0x035E)*10)
+    print()
 
-render(random_state(10, 5))
+if __name__ == '__main__':
+    currBoard = random_state(200, 50)
+    render(currBoard)
+
+    while True:
+        currBoard = next_state(currBoard)
+        time.sleep(0.25)
+        render(currBoard)

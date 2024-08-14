@@ -74,5 +74,80 @@ class TestNextStateMethod(unittest.TestCase):
 
         self.assertListEqual(next_state(initState1), expectedNextState)
 
+    # Tests cases where live cells are on the edges
+    def test_edges(self):
+        initState1 = [
+            [1,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+
+        initState2 = [
+            [1,1,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+
+        initState3 = [
+            [1,1,1],
+            [0,0,0],
+            [0,0,0]
+        ]
+
+        initState4 = [
+            [1,1,1],
+            [1,0,0],
+            [0,0,0]
+        ]
+
+        initState5 = [
+            [1,1,1],
+            [1,1,0],
+            [0,0,0]
+        ]
+
+        initState6 = [
+            [1,1,1],
+            [1,1,1],
+            [0,0,0]
+        ]
+
+        expectedNextState1 = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+
+        expectedNextState2 = [
+            [0,1,0],
+            [0,1,0],
+            [0,0,0]
+        ]
+
+        expectedNextState3 = [
+            [1,1,0],
+            [1,0,0],
+            [0,0,0]
+        ]
+
+        expectedNextState4 = [
+            [1,0,1],
+            [1,0,1],
+            [0,0,0]
+        ]
+
+        expectedNextState5 = [
+            [1,0,1],
+            [1,0,1],
+            [0,1,0]
+        ]
+
+        self.assertListEqual(next_state(initState1), expectedNextState1)
+        self.assertListEqual(next_state(initState2), expectedNextState1)
+        self.assertListEqual(next_state(initState3), expectedNextState2)
+        self.assertListEqual(next_state(initState4), expectedNextState3)
+        self.assertListEqual(next_state(initState5), expectedNextState4)
+        self.assertListEqual(next_state(initState6), expectedNextState5)
+
 if __name__ == '__main__':
     unittest.main()
