@@ -11,6 +11,19 @@ def dead_state(width, height):
     board = [[0 for x in range(width)] for y in range(height)]
     return board
 
+# Loads the initial state of the board from a config file made of 1s and 0s
+def load_state(file):
+    with open(file, 'r') as f:
+        loaded = f.readlines()
+
+    initBoard = [[int(num) for num in line if num != '\n'] for line in loaded]
+
+    # If config file is empty load a dead state board
+    if len(initBoard) == 0:
+        initBoard = dead_state(1,1)
+
+    return initBoard
+
 # Calculates the state of the board after the next round
 def next_state(board):
     height = len(board)
@@ -63,10 +76,26 @@ def render(board):
     print()
 
 if __name__ == '__main__':
-    currBoard = random_state(200, 50)
-    render(currBoard)
+    mode = ''
+    while mode not in ['load','go']:
+        mode = input("Type 'load' to run a custom board, or 'go' to run a random soup: ").lower().strip()
 
+        if mode == 'load':
+            fileName = input("Type the name of the file (with extension) to load: ").lower()
+            try:
+                currBoard = load_state(fileName)
+            except FileNotFoundError:
+                print("File not found")
+                quit()
+        elif mode == 'go':
+            userWidth = input("Enter the width of the board: ")
+            userHeight = input("Enter the height of the board: ")
+            currBoard = random_state(int(userWidth), int(userHeight))
+        else:
+            print("Invalid mode")
+
+    render(currBoard)
     while True:
         currBoard = next_state(currBoard)
-        time.sleep(0.25)
+        time.sleep(0.1)
         render(currBoard)
