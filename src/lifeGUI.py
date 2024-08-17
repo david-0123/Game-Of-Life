@@ -97,17 +97,48 @@ def lifeMain():
 
 def main(stdscr):
     stdscr.border()
-
     box_height, box_width = (2,3)
-    gridWidth = curses.COLS - box_width
-    gridHeight = curses.LINES - box_height
 
-    newBoard = random_state(gridWidth, gridHeight)
+    mode = ''
+    stdscr.addstr(curses.LINES//2-7, curses.COLS//2-25, "Welcome to Conway's Game of Life!")
+    stdscr.addstr(curses.LINES//2-5, curses.COLS//2-25, "Type 'load' to run a custom board, or 'go' to run a random soup")
+    while mode not in ['load','go']:
+        modeWin = curses.newwin(1, 20, curses.LINES//2, curses.COLS//2-5)
+        modeBox = Textbox(modeWin)
+        stdscr.refresh()
+        modeBox.edit()
+        mode = modeBox.gather().strip().replace('\n', '')
+
+        if mode == 'load':
+            stdscr.addstr(curses.LINES//2+3, curses.COLS//2-25, "Type the name of the file (with extension) to load")
+            fileWin = curses.newwin(1, 20, curses.LINES//2+5, curses.COLS//2-5)
+            fileBox = Textbox(fileWin)
+            stdscr.refresh()
+            fileBox.edit()
+            fileName = fileBox.gather().strip().replace('\n', '')
+            try:
+                currBoard = load_state(fileName)
+                gridWidth = len(currBoard[0])
+                gridHeight = len(currBoard)
+            except FileNotFoundError:
+                print("File not found")
+                quit()
+
+        elif mode == 'go':
+            gridWidth = curses.COLS - box_width
+            gridHeight = curses.LINES - box_height
+            currBoard = random_state(gridWidth, gridHeight)
+
+        else:
+            stdscr.addstr(curses.LINES//2+10, curses.COLS//2, "Invalid mode")
+            stdscr.refresh()
+
     while True:
         stdscr.erase()
-        render(newBoard, stdscr, box_height, box_width, gridHeight, gridWidth)
+        render(currBoard, stdscr, box_height, box_width, gridHeight, gridWidth)
+        stdscr.move(0,0)
         stdscr.refresh()
-        newBoard = next_state(newBoard)
+        currBoard = next_state(currBoard)
         time.sleep(0.1)
 
 wrapper(main)
