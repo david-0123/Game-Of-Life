@@ -59,24 +59,16 @@ def next_state(board):
 
     return next_board
 
-# Displays the current game state on the terminal with the correct format
-#
-# │■   ■     │
-# │   ■    ■ │
-# │   ■      │
-# │     ■ ■ ■│
-# │         ■│
-def render(board):
-    for i in range(len(board)):
-        print(chr(0x2502), end="")
-        for j in range(len(board[i])):
-            if board[i][j] == 0:
-                symbol = ' '
-            else:
-                symbol = chr(0x2588)
-            print(symbol, end="")
-        print(chr(0x2502))
-    print()
+def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
+    stdscr.border()
+    for i in range(gridHeight):
+        for j in range(gridWidth):
+            for y in range(boxHeight-1):
+                for x in range(boxWidth-1):
+                    if board[i][j] == 1:
+                        stdscr.addch(y+i+1, x+j+1, ' ', curses.A_REVERSE)
+                    else:
+                        stdscr.addch(y+i+1, x+j+1, ' ')
 
 def lifeMain():
     mode = ''
@@ -104,8 +96,18 @@ def lifeMain():
         render(currBoard)
 
 def main(stdscr):
-    rectangle(stdscr, 0, 0, curses.LINES-2, curses.COLS-2)
-    stdscr.refresh()
-    stdscr.getch()
+    stdscr.border()
+
+    box_height, box_width = (2,3)
+    gridWidth = curses.COLS - box_width
+    gridHeight = curses.LINES - box_height
+
+    newBoard = random_state(gridWidth, gridHeight)
+    while True:
+        stdscr.erase()
+        render(newBoard, stdscr, box_height, box_width, gridHeight, gridWidth)
+        stdscr.refresh()
+        newBoard = next_state(newBoard)
+        time.sleep(0.1)
 
 wrapper(main)
