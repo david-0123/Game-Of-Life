@@ -59,6 +59,7 @@ def next_state(board):
 
     return next_board
 
+# Updates the terminal to show the current board state
 def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
     stdscr.erase()
     stdscr.border()
@@ -67,84 +68,114 @@ def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
             for y in range(boxHeight-1):
                 for x in range(boxWidth-1):
                     if board[i][j] == 1:
+                        #Uses whitespace with reversed bg/fg, so it appears as a white box
                         stdscr.addch(y+i+1, x+j+1, ' ', curses.A_REVERSE)
                     else:
                         stdscr.addch(y+i+1, x+j+1, ' ')
-    stdscr.move(0,0)
+    stdscr.move(curses.LINES-1, curses.COLS-1) #Moves the cursor to the bottom right, so it's out of the way
     stdscr.refresh()
 
+# Displays flashing text on the screen
+def flashText(stdscr, colourPair, y, x, text):
+    curses.curs_set(0)
+    stdscr.attron(colourPair)
+    for i in range(2):
+        stdscr.addstr(y, x, text)
+        stdscr.refresh()
+        time.sleep(1)
+
+        stdscr.addstr(y, x, ' ' * len(text))
+        stdscr.refresh()
+        time.sleep(0.5)
+    stdscr.attroff(colourPair)
+
+# Handles the display and logic of the menu screen
 def menu(stdscr):
-    box_height, box_width = (2,3)
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    redOnBlack = curses.color_pair(1)
+    cellHeight, cellWidth = (2,3)
     stdscr.nodelay(True)
 
-    mode = ''
+    TITLE_Y_COORD = curses.LINES//3
+    TITLE_X_COORD = (curses.COLS*2)//5
 
-    while mode not in ['load','go']:
+    exitLoop = False
+
+    # Loops until a valid command is entered
+    while not exitLoop:
         stdscr.clear()
         stdscr.border()
-        stdscr.addstr(curses.LINES//2-8, curses.COLS//2-25, "Welcome to Conway's Game of Life!")
-        stdscr.addstr(curses.LINES//2-6, curses.COLS//2-25, "Controls: 'q' to end simulation")
-        stdscr.addstr(curses.LINES//2-4, curses.COLS//2-25, "Type 'load' to run a custom board, 'go' to run a random soup, or 'quit' to exit the game")
+        stdscr.addstr(TITLE_Y_COORD, TITLE_X_COORD+5, "Welcome to Conway's Game of Life!")
+        stdscr.addstr(TITLE_Y_COORD+2, TITLE_X_COORD-3, "Press any key to end the simulation when it starts")
+        stdscr.addstr(TITLE_Y_COORD+4, TITLE_X_COORD-20, "Type 'load' to run a custom board, 'go' to run a random soup, or 'quit' to exit the game")
 
-        modeWin = curses.newwin(1, 20, curses.LINES//2, curses.COLS//2-5)
+        modeWin = curses.newwin(1, 5, TITLE_Y_COORD+6, curses.COLS//2-2)
         modeBox = Textbox(modeWin)
+        stdscr.hline(TITLE_Y_COORD+7, curses.COLS//2-3, curses.ACS_HLINE, 6)
+
         stdscr.refresh()
+        curses.curs_set(1)
         modeBox.edit()
+        stdscr.refresh()
+
         mode = modeBox.gather().lower().strip().replace('\n', '')
 
         if mode == 'load':
-            stdscr.addstr(curses.LINES//2+3, curses.COLS//2-25, "Type the name of the file (with extension) to load")
-            fileWin = curses.newwin(1, 20, curses.LINES//2+5, curses.COLS//2-5)
+            stdscr.addstr(TITLE_Y_COORD+10, TITLE_X_COORD-4, "Type the name of the file (with extension) to load")
+            fileWin = curses.newwin(1, 20, TITLE_Y_COORD+12, curses.COLS//2-3)
             fileBox = Textbox(fileWin)
+
             stdscr.refresh()
             fileBox.edit()
             fileName = fileBox.gather().strip().replace('\n', '')
+
             try:
                 initBoard = load_state(fileName)
                 gridWidth = len(initBoard[0])
                 gridHeight = len(initBoard)
+                exitLoop = True
             except FileNotFoundError:
-                print("File not found")
-                quit()
+                flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "File Not Found")
 
         elif mode == 'go':
-            gridWidth = curses.COLS - box_width
-            gridHeight = curses.LINES - box_height
+            gridWidth = curses.COLS - cellWidth
+            gridHeight = curses.LINES - cellHeight
             initBoard = random_state(gridWidth, gridHeight)
+            exitLoop = True
 
         elif mode == 'quit':
             quit()
 
         else:
-            stdscr.addstr(curses.LINES//2+10, curses.COLS//2, "Invalid command")
-            stdscr.refresh()
-            time.sleep(1)
+            flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "Invalid Command")
 
-    play(stdscr, initBoard, box_height, box_width, gridHeight, gridWidth)
+    play(stdscr, initBoard, cellHeight, cellWidth, gridHeight, gridWidth)
 
+# Handles the infinite simulation
 def play(stdscr, board, box_height, box_width, gridHeight, gridWidth):
-    while True:
+    playing = True
+
+    while playing:
         try:
-            key = stdscr.getkey()
+            key = stdscr.getch()
         except:
             key = None
 
-        if key == chr(ord("q")):
+        # Any key press terminates the game
+        if key != -1:
+            playing = False
             menu(stdscr)
-            break
 
         render(board, stdscr, box_height, box_width, gridHeight, gridWidth)
         board = next_state(board)
         time.sleep(0.1)
 
-        '''
-        TODO:
-        - allow user to terminate round/whole program with keyboard
-        - scalability formatting
-        - allow user to change config settings? (play/pause/speed/starting live cells etc)
-        '''
-
 def main(stdscr):
     menu(stdscr)
 
 wrapper(main)
+
+'''
+TODO:
+- allow user to change config settings? (play/pause/speed/starting live cells etc)
+'''
