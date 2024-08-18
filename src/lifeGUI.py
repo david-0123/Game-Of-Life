@@ -60,6 +60,7 @@ def next_state(board):
     return next_board
 
 def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
+    stdscr.erase()
     stdscr.border()
     for i in range(gridHeight):
         for j in range(gridWidth):
@@ -69,45 +70,27 @@ def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
                         stdscr.addch(y+i+1, x+j+1, ' ', curses.A_REVERSE)
                     else:
                         stdscr.addch(y+i+1, x+j+1, ' ')
+    stdscr.move(0,0)
+    stdscr.refresh()
 
-def lifeMain():
-    mode = ''
-    while mode not in ['load','go']:
-        mode = input("Type 'load' to run a custom board, or 'go' to run a random soup: ").lower().strip()
-
-        if mode == 'load':
-            fileName = input("Type the name of the file (with extension) to load: ").lower()
-            try:
-                currBoard = load_state(fileName)
-            except FileNotFoundError:
-                print("File not found")
-                quit()
-        elif mode == 'go':
-            userWidth = input("Enter the width of the board: ")
-            userHeight = input("Enter the height of the board: ")
-            currBoard = random_state(int(userWidth), int(userHeight))
-        else:
-            print("Invalid mode")
-
-    render(currBoard)
-    while True:
-        currBoard = next_state(currBoard)
-        time.sleep(0.1)
-        render(currBoard)
-
-def main(stdscr):
-    stdscr.border()
+def menu(stdscr):
     box_height, box_width = (2,3)
+    stdscr.nodelay(True)
 
     mode = ''
-    stdscr.addstr(curses.LINES//2-7, curses.COLS//2-25, "Welcome to Conway's Game of Life!")
-    stdscr.addstr(curses.LINES//2-5, curses.COLS//2-25, "Type 'load' to run a custom board, or 'go' to run a random soup")
+
     while mode not in ['load','go']:
+        stdscr.clear()
+        stdscr.border()
+        stdscr.addstr(curses.LINES//2-8, curses.COLS//2-25, "Welcome to Conway's Game of Life!")
+        stdscr.addstr(curses.LINES//2-6, curses.COLS//2-25, "Controls: 'q' to end simulation")
+        stdscr.addstr(curses.LINES//2-4, curses.COLS//2-25, "Type 'load' to run a custom board, 'go' to run a random soup, or 'quit' to exit the game")
+
         modeWin = curses.newwin(1, 20, curses.LINES//2, curses.COLS//2-5)
         modeBox = Textbox(modeWin)
         stdscr.refresh()
         modeBox.edit()
-        mode = modeBox.gather().strip().replace('\n', '')
+        mode = modeBox.gather().lower().strip().replace('\n', '')
 
         if mode == 'load':
             stdscr.addstr(curses.LINES//2+3, curses.COLS//2-25, "Type the name of the file (with extension) to load")
@@ -117,9 +100,9 @@ def main(stdscr):
             fileBox.edit()
             fileName = fileBox.gather().strip().replace('\n', '')
             try:
-                currBoard = load_state(fileName)
-                gridWidth = len(currBoard[0])
-                gridHeight = len(currBoard)
+                initBoard = load_state(fileName)
+                gridWidth = len(initBoard[0])
+                gridHeight = len(initBoard)
             except FileNotFoundError:
                 print("File not found")
                 quit()
@@ -127,18 +110,41 @@ def main(stdscr):
         elif mode == 'go':
             gridWidth = curses.COLS - box_width
             gridHeight = curses.LINES - box_height
-            currBoard = random_state(gridWidth, gridHeight)
+            initBoard = random_state(gridWidth, gridHeight)
+
+        elif mode == 'quit':
+            quit()
 
         else:
-            stdscr.addstr(curses.LINES//2+10, curses.COLS//2, "Invalid mode")
+            stdscr.addstr(curses.LINES//2+10, curses.COLS//2, "Invalid command")
             stdscr.refresh()
+            time.sleep(1)
 
+    play(stdscr, initBoard, box_height, box_width, gridHeight, gridWidth)
+
+def play(stdscr, board, box_height, box_width, gridHeight, gridWidth):
     while True:
-        stdscr.erase()
-        render(currBoard, stdscr, box_height, box_width, gridHeight, gridWidth)
-        stdscr.move(0,0)
-        stdscr.refresh()
-        currBoard = next_state(currBoard)
+        try:
+            key = stdscr.getkey()
+        except:
+            key = None
+
+        if key == chr(ord("q")):
+            menu(stdscr)
+            break
+
+        render(board, stdscr, box_height, box_width, gridHeight, gridWidth)
+        board = next_state(board)
         time.sleep(0.1)
+
+        '''
+        TODO:
+        - allow user to terminate round/whole program with keyboard
+        - scalability formatting
+        - allow user to change config settings? (play/pause/speed/starting live cells etc)
+        '''
+
+def main(stdscr):
+    menu(stdscr)
 
 wrapper(main)
