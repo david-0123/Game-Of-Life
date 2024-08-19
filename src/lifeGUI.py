@@ -35,43 +35,41 @@ def next_state(board):
     next_board = dead_state(width, height)
 
     # Loops through each board cell
-    for x in range(height):
-        for y in range(width):
-            current = board[x][y]
+    for y in range(height):
+        for x in range(width):
+            current = board[y][x]
             currentAlive = current != 0
 
             liveNeighbours = 0
 
             # Loops each cell's neighbours
-            for a in range(x-1, x+2):
-                for b in range(y-1, y+2):
+            for a in range(y-1, y+2):
+                for b in range(x-1, x+2):
                     try:
-                        if board[a][b] == 1 and a >= 0 and b >= 0 and (a,b) != (x,y):
+                        if board[a][b] == 1 and a >= 0 and b >= 0 and (a,b) != (y,x):
                             liveNeighbours += 1
                     except IndexError:
                         pass
 
             # Applies rules that determine which cells become/stay alive
             if currentAlive and 2 <= liveNeighbours <= 3:
-                next_board[x][y] = 1
+                next_board[y][x] = 1
             elif not currentAlive and liveNeighbours == 3:
-                next_board[x][y] = 1
+                next_board[y][x] = 1
 
     return next_board
 
 # Updates the terminal to show the current board state
-def render(board, stdscr, boxHeight, boxWidth, gridHeight, gridWidth):
+def render(board, stdscr, gridHeight, gridWidth):
     stdscr.erase()
     stdscr.border()
-    for i in range(gridHeight):
-        for j in range(gridWidth):
-            for y in range(boxHeight-1):
-                for x in range(boxWidth-1):
-                    if board[i][j] == 1:
-                        #Uses whitespace with reversed bg/fg, so it appears as a white box
-                        stdscr.addch(y+i+1, x+j+1, ' ', curses.A_REVERSE)
-                    else:
-                        stdscr.addch(y+i+1, x+j+1, ' ')
+    for i in range(gridHeight): # For each row
+        for j in range(gridWidth): # For each column
+            if board[i][j] == 1:
+                #Uses whitespace with reversed bg/fg, so it appears as a white box
+                stdscr.addch(i+1, j+1, ' ', curses.A_REVERSE)
+            else:
+                stdscr.addch(i+1, j+1, ' ')
     stdscr.move(curses.LINES-1, curses.COLS-1) #Moves the cursor to the bottom right, so it's out of the way
     stdscr.refresh()
 
@@ -93,7 +91,6 @@ def flashText(stdscr, colourPair, y, x, text):
 def menu(stdscr):
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     redOnBlack = curses.color_pair(1)
-    cellHeight, cellWidth = (2,3)
     stdscr.nodelay(True)
 
     TITLE_Y_COORD = curses.LINES//3
@@ -138,8 +135,8 @@ def menu(stdscr):
                 flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "File Not Found")
 
         elif mode == 'go':
-            gridWidth = curses.COLS - cellWidth
-            gridHeight = curses.LINES - cellHeight
+            gridWidth = curses.COLS - 2
+            gridHeight = curses.LINES - 2
             initBoard = random_state(gridWidth, gridHeight)
             exitLoop = True
 
@@ -149,10 +146,10 @@ def menu(stdscr):
         else:
             flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "Invalid Command")
 
-    play(stdscr, initBoard, cellHeight, cellWidth, gridHeight, gridWidth)
+    play(stdscr, initBoard, gridHeight, gridWidth)
 
 # Handles the infinite simulation
-def play(stdscr, board, box_height, box_width, gridHeight, gridWidth):
+def play(stdscr, board, gridHeight, gridWidth):
     playing = True
 
     while playing:
@@ -166,7 +163,7 @@ def play(stdscr, board, box_height, box_width, gridHeight, gridWidth):
             playing = False
             menu(stdscr)
 
-        render(board, stdscr, box_height, box_width, gridHeight, gridWidth)
+        render(board, stdscr, gridHeight, gridWidth)
         board = next_state(board)
         time.sleep(0.1)
 
@@ -177,5 +174,6 @@ wrapper(main)
 
 '''
 TODO:
-- allow user to change config settings? (play/pause/speed/starting live cells etc)
+- allow user to change settings? (play/pause/speed)
+- allow user to manually click and place starting live cells before playing
 '''
