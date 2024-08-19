@@ -87,6 +87,15 @@ def flashText(stdscr, colourPair, y, x, text):
         time.sleep(0.5)
     stdscr.attroff(colourPair)
 
+def checkRectangularBoard(board):
+    width = len(board[0])
+
+    for row in board:
+        if len(row) != width:
+            return False
+
+    return True
+
 # Handles the display and logic of the menu screen
 def menu(stdscr):
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -102,9 +111,9 @@ def menu(stdscr):
     while not exitLoop:
         stdscr.clear()
         stdscr.border()
-        stdscr.addstr(TITLE_Y_COORD, TITLE_X_COORD+5, "Welcome to Conway's Game of Life!")
-        stdscr.addstr(TITLE_Y_COORD+2, TITLE_X_COORD-3, "Press any key to end the simulation when it starts")
-        stdscr.addstr(TITLE_Y_COORD+4, TITLE_X_COORD-20, "Type 'load' to run a custom board, 'go' to run a random soup, or 'quit' to exit the game")
+        stdscr.addstr(TITLE_Y_COORD, TITLE_X_COORD+6, "Welcome to Conway's Game of Life!")
+        stdscr.addstr(TITLE_Y_COORD+2, TITLE_X_COORD-3, "Press any key to end the simulation after it starts")
+        stdscr.addstr(TITLE_Y_COORD+4, TITLE_X_COORD-24, "Type 'load' to run a custom pattern, 'go' to run a random pattern, or 'quit' to exit the game")
 
         modeWin = curses.newwin(1, 5, TITLE_Y_COORD+6, curses.COLS//2-2)
         modeBox = Textbox(modeWin)
@@ -118,8 +127,9 @@ def menu(stdscr):
         mode = modeBox.gather().lower().strip().replace('\n', '')
 
         if mode == 'load':
-            stdscr.addstr(TITLE_Y_COORD+10, TITLE_X_COORD-4, "Type the name of the file (with extension) to load")
-            fileWin = curses.newwin(1, 20, TITLE_Y_COORD+12, curses.COLS//2-3)
+            stdscr.addstr(TITLE_Y_COORD+10, TITLE_X_COORD-17, "Config files must be text files containing a rectangular grid of only 1s and 0s")
+            stdscr.addstr(TITLE_Y_COORD+12, TITLE_X_COORD+1, "Type the file name (with extension) to load")
+            fileWin = curses.newwin(1, 20, TITLE_Y_COORD+14, curses.COLS//2-3)
             fileBox = Textbox(fileWin)
 
             stdscr.refresh()
@@ -130,9 +140,11 @@ def menu(stdscr):
                 initBoard = load_state(fileName)
                 gridWidth = len(initBoard[0])
                 gridHeight = len(initBoard)
-                exitLoop = True
+                exitLoop = checkRectangularBoard(initBoard)
             except FileNotFoundError:
-                flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "File Not Found")
+                flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+15, "File Not Found!")
+            except ValueError:
+                flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+13, "Invalid Config File")
 
         elif mode == 'go':
             gridWidth = curses.COLS - 2
@@ -144,7 +156,7 @@ def menu(stdscr):
             quit()
 
         else:
-            flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+14, "Invalid Command")
+            flashText(stdscr, redOnBlack, TITLE_Y_COORD+20, TITLE_X_COORD+15, "Invalid Command")
 
     play(stdscr, initBoard, gridHeight, gridWidth)
 
